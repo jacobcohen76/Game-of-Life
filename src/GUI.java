@@ -18,7 +18,7 @@ public class GUI extends JFrame implements MouseListener
 	{
 		this.clockSpeed = clockSpeed;
 		
-		setTitle("Initialize Starting State, and then Right-Click to Begin");
+		setTitle("The Game of Life");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		paintPanel = new PaintPanel(grid, cellSize, gap, aliveColor, deadColor, gapColor);
