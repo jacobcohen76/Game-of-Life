@@ -10,7 +10,7 @@ public class PaintPanel extends JPanel
 	
 	private int cellSize;
 	private int gap;
-	private Grid grid;
+	private volatile Grid grid;
 	
 	private Color aliveColor;
 	private Color deadColor;
@@ -34,14 +34,29 @@ public class PaintPanel extends JPanel
 	
 	public void tick(long millis)
 	{
+		long begin, end;
+		
+		begin = System.currentTimeMillis();
 		grid.tick();
+		end = System.currentTimeMillis();
+		millis -= end - begin;
+		
+		begin = System.currentTimeMillis();
 		repaint();
+		end = System.currentTimeMillis();
+		millis -= end - begin;
+		
 		pause(millis);
 	}
 	
 	private void pause(long millis)
 	{
-		try { Thread.sleep(millis); } catch (InterruptedException e) {}
+		if(millis > 0)
+		{
+			try {
+				Thread.sleep(millis);
+			} catch (InterruptedException e) {}
+		}
 	}
 	
 	public void paint(Graphics g)
@@ -84,5 +99,20 @@ public class PaintPanel extends JPanel
 	{
 		grid.get(row, col).status = !grid.getStatus(row, col);
 		repaint();
+	}
+	
+	public void toggle(Point pos)
+	{
+		toggle(pos.y, pos.x);
+	}
+	
+	public void set(int row, int col, boolean status)
+	{
+		grid.setStatus(row, col, status);
+	}
+	
+	public void set(Point pos, boolean status)
+	{
+		grid.setStatus(pos, status);
 	}
 }

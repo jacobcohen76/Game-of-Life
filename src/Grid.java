@@ -43,7 +43,7 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	public Grid(int numRows, int numCols)
 	{
-		this(numRows, numCols, 20, 20);
+		this(numRows, numCols, 3, 3);
 	}
 	
 	public int getNumRows()
