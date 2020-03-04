@@ -51,11 +51,11 @@ public class GUI extends JFrame implements MouseListener
 	{
 		public void run()
 		{
-			setTitle("Running");
+			setTitle("▶ Running");
 			running = true;
 			while(running == true)
 				paintPanel.tick(clockSpeed);
-			setTitle("Paused");
+			setTitle("❚❚ Paused");
 		}
 	}
 	
