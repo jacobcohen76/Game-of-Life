@@ -1,6 +1,6 @@
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 public class Grid implements Iterable<Grid.Cell>
 {
@@ -9,23 +9,41 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	private int numRows;
 	private int numCols;
+	private int rowPad;
+	private int colPad;
 	private Cell[] array;
 	private HashMap<Cell, Integer> livingNeighborMap;
 	
-	public Grid(int numRows, int numCols)
+	public Grid(int numRows, int numCols, int rowPad, int colPad)
 	{
+		numRows += 2 * rowPad;
+		numCols += 2 * colPad;
+		
 		this.numRows = numRows;
 		this.numCols = numCols;
+		this.rowPad = 0;
+		this.colPad = 0;
+		
 		array = new Cell[numRows * numCols];
 		livingNeighborMap = new HashMap<Cell, Integer>();
 		
 		for(int row = 0; row < numRows; row++)
 			for(int col = 0; col < numCols; col++)
-				set(row, col, new Cell(new Point(col, row)));
+				set(row, col, new Cell(new Point(col - colPad, row - rowPad)));
 		
-		for(int row = 0; row < numRows; row++)
-			for(int col = 0; col < numCols; col++)
+		this.numRows -= 2 * rowPad;
+		this.numCols -= 2 * colPad;		
+		this.rowPad = rowPad;
+		this.colPad = colPad;
+		
+		for(int row = -rowPad; row < (this.numRows + rowPad); row++)
+			for(int col = -colPad; col < (this.numCols + colPad); col++)
 				get(row, col).initNeighbors();
+	}
+	
+	public Grid(int numRows, int numCols)
+	{
+		this(numRows, numCols, 20, 20);
 	}
 	
 	public int getNumRows()
@@ -42,10 +60,10 @@ public class Grid implements Iterable<Grid.Cell>
 	{
 		boolean withinBounds = true;
 		
-		withinBounds &= 0 <= row;
-		withinBounds &= 0 <= col;
-		withinBounds &= row < numRows;
-		withinBounds &= col < numCols;
+		withinBounds &= -rowPad <= row;
+		withinBounds &= -colPad <= col;
+		withinBounds &= row < (numRows + rowPad);
+		withinBounds &= col < (numCols + colPad);
 		
 		return withinBounds;
 	}
@@ -57,7 +75,7 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	private int indexOf(int row, int col)
 	{
-		return (col + (row * numCols));
+		return ((col + colPad) + (row + rowPad) * (numCols + 2 * colPad));
 	}
 	
 	private Cell get(int index)
@@ -87,9 +105,10 @@ public class Grid implements Iterable<Grid.Cell>
 		return set(pos.y, pos.x, data);
 	}
 	
-	private HashSet<Cell> getNeighbors(Cell cell)
+	private Cell[] getNeighbors(Cell cell)
 	{
-		HashSet<Cell> neighbors = new HashSet<Cell>();
+		LinkedList<Cell> neighbors = new LinkedList<Cell>();
+		
 		neighbors.add(cell.getRelative(Vector.NORTH));
 		neighbors.add(cell.getRelative(Vector.EAST));
 		neighbors.add(cell.getRelative(Vector.SOUTH));
@@ -98,7 +117,19 @@ public class Grid implements Iterable<Grid.Cell>
 		neighbors.add(cell.getRelative(Vector.SOUTHEAST));
 		neighbors.add(cell.getRelative(Vector.SOUTHWEST));
 		neighbors.add(cell.getRelative(Vector.NORTHWEST));
-		return neighbors;	
+		
+		Iterator<Cell> itr = neighbors.iterator();
+		while(itr.hasNext())
+			if(itr.next() == null)
+				itr.remove();
+		
+		Cell[] neighborArray = new Cell[neighbors.size()];
+		
+		int i = 0;
+		for(Cell neighbor : neighbors)
+			neighborArray[i++] = neighbor;
+		
+		return neighborArray;
 	}
 	
 	private void updateLivingNeighborMap()
@@ -107,11 +138,16 @@ public class Grid implements Iterable<Grid.Cell>
 			livingNeighborMap.put(cell, cell.getNumLivingNeighbors());
 	}
 	
+	private void updateStatus()
+	{
+		for(Cell cell : array)
+			cell.updateStatus();
+	}
+	
 	public void tick()
 	{
 		updateLivingNeighborMap();
-		for(Cell cell : array)
-			cell.updateStatus();
+		updateStatus();
 	}
 	
 	public boolean isAlive(Cell cell)
@@ -128,7 +164,7 @@ public class Grid implements Iterable<Grid.Cell>
 	{
 		protected Point pos;
 		protected boolean status;
-		private HashSet<Cell> neighbors;
+		private Cell[] neighbors;
 		
 		public Cell(Point pos, boolean status)
 		{

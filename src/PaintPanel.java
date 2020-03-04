@@ -28,7 +28,7 @@ public class PaintPanel extends JPanel
 		grid = toPaint;		
 		Dimension preferredSize = new Dimension(0, 0);
 		preferredSize.width = cellSize * grid.getNumCols() + (grid.getNumCols() + 1) * gap;
-		preferredSize.height = cellSize * grid.getNumRows() + (grid.getNumCols() + 2) * gap;
+		preferredSize.height = cellSize * grid.getNumRows() + (grid.getNumRows() + 2) * gap;
 		setPreferredSize(preferredSize);
 	}
 	

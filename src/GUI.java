@@ -31,13 +31,13 @@ public class GUI extends JFrame implements MouseListener
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
-		int numRows = 100;
-		int numCols = 100;
+		int numRows = 500;
+		int numCols = 500;
 		
 		int cellSize = 5;
-		int gap = 1;
+		int gap = 0;
 		
-		long clockSpeed = 100L;
+		long clockSpeed = 10L;
 		
 		Color aliveColor = Color.WHITE;
 		Color deadColor = Color.BLACK;
