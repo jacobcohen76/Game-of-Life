@@ -1,8 +1,9 @@
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 public class Grid implements Iterable<Grid.Cell>
-{
+{	
 	public static final boolean ALIVE = true;
 	public static final boolean DEAD = false;
 	
@@ -11,6 +12,14 @@ public class Grid implements Iterable<Grid.Cell>
 	private int rowPad;
 	private int colPad;
 	private Cell[] array;
+	
+	public Grid(boolean[][] alive, int numRows, int numCols, int rowPad, int colPad)
+	{
+		this(numRows, numCols, rowPad, colPad);
+		for(int i = 0; i < alive.length; i++)
+			for(int j = 0; j < alive[i].length; j++)
+				get(i, j).status = alive[i][j];
+	}
 	
 	public Grid(int numRows, int numCols, int rowPad, int colPad)
 	{
@@ -51,6 +60,49 @@ public class Grid implements Iterable<Grid.Cell>
 	public int getNumCols()
 	{
 		return numCols;
+	}
+	
+	public SaveableData getSaveableData()
+	{
+		SaveableData data = new SaveableData();
+		data.alive = new boolean[numRows][numCols];
+		
+		for(int i = 0; i < data.alive.length; i++)
+			for(int j = 0; j < data.alive[i].length; j++)
+				data.alive[i][j] = get(i, j).status;
+		
+		data.numRows = numRows;
+		data.numCols = numCols;
+		data.rowPad = rowPad;
+		data.colPad = colPad;
+		
+		return data;
+	}
+	
+	public void loadSaveableData(SaveableData data)
+	{
+		numRows = data.numRows + 2 * data.rowPad;
+		numCols = data.numCols + 2 * data.colPad;
+		rowPad = 0;
+		colPad = 0;
+		
+		array = new Cell[numRows * numCols];
+		
+		for(int row = 0; row < numRows; row++)
+			for(int col = 0; col < numCols; col++)
+				set(row, col, new Cell(new Point(col - data.colPad, row - data.rowPad)));
+		
+		rowPad = data.rowPad;
+		colPad = data.colPad;
+		numRows = data.numRows;
+		numCols = data.numCols;
+		
+		for(int i = 0; i < data.alive.length; i++)
+			for(int j = 0; j < data.alive[i].length; j++)
+				get(i, j).status = data.alive[i][j];
+		for(int row = -rowPad; row < (this.numRows + rowPad); row++)
+			for(int col = -colPad; col < (this.numCols + colPad); col++)
+				get(row, col).initNeighbors();
 	}
 	
 	public boolean isWithinBounds(int row, int col)
@@ -157,8 +209,10 @@ public class Grid implements Iterable<Grid.Cell>
 		return (cell == null) || cell.status == DEAD;
 	}
 	
-	public class Cell
+	public class Cell implements Serializable
 	{
+		private static final long serialVersionUID = -4598658155078109870L;
+		
 		protected Point pos;
 		protected boolean status;
 		private Cell[] neighbors;

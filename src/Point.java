@@ -1,6 +1,9 @@
+import java.io.Serializable;
 
-public class Point implements Cloneable
+public class Point implements Cloneable, Serializable
 {
+	private static final long serialVersionUID = -1947168599465501309L;
+	
 	public int x;
 	public int y;
 	

@@ -1,6 +1,13 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import javax.swing.JPanel;
 
@@ -34,6 +41,20 @@ public class PaintPanel extends JPanel
 		preferredSize.width = cellSize * grid.getNumCols() + (grid.getNumCols() + 1) * gap;
 		preferredSize.height = cellSize * grid.getNumRows() + (grid.getNumRows() + 2) * gap;
 		return preferredSize;
+	}
+	
+	public void save(File file) throws FileNotFoundException, IOException
+	{
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+		oos.writeObject(grid.getSaveableData());
+		oos.close();
+	}
+	
+	public void load(File file) throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
+		grid.loadSaveableData((SaveableData)ois.readObject());
+		ois.close();
 	}
 	
 	public void tick(long millis)

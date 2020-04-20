@@ -5,6 +5,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,10 +49,10 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
-		int numRows = 700;
-		int numCols = 700;
+		int numRows = 1000;
+		int numCols = 1000;
 		
-		int cellSize = 2;
+		int cellSize = 8;
 		int gap = 0;
 		
 		long clockSpeed = 100L;
@@ -137,7 +140,9 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 
 		
 	}
-
+	
+	boolean ctrl = false;
+	
 	@Override
 	public void keyPressed(KeyEvent e)
 	{
@@ -146,6 +151,33 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 				executor.execute(new Play(Thread.MAX_PRIORITY));
 			else
 				playing = false;
+		if(e.getKeyCode() == KeyEvent.VK_S)
+		{
+			try {
+				paintPanel.save(new File("E:\\grid"));
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		else if(e.getKeyCode() == KeyEvent.VK_L)
+		{
+			try {
+				paintPanel.load(new File("E:\\grid"));
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
 	}
 
 	@Override
