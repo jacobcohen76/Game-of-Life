@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -22,6 +23,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	
 	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor)
 	{
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.clockSpeed = clockSpeed;
 		button = MouseEvent.NOBUTTON;
 		playing = false;
@@ -30,9 +32,9 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		paintPanel = new PaintPanel(grid, cellSize, gap, aliveColor, deadColor, gapColor);
 		
 		setTitle("The Game of Life");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		getContentPane().add(paintPanel);
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(paintPanel, BorderLayout.CENTER);
 		paintPanel.addMouseListener(this);
 		paintPanel.addMouseMotionListener(this);
 		this.addKeyListener(this);
@@ -44,17 +46,17 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
-		int numRows = 100;
-		int numCols = 100;
+		int numRows = 700;
+		int numCols = 700;
 		
-		int cellSize = 8;
+		int cellSize = 2;
 		int gap = 0;
 		
 		long clockSpeed = 100L;
 		
-		Color aliveColor = Color.RED;
-		Color deadColor = Color.CYAN;
-		Color gapColor = Color.WHITE;
+		Color aliveColor = Color.WHITE;
+		Color deadColor = Color.BLACK;
+		Color gapColor = Color.LIGHT_GRAY;
 		
 		Grid grid = new Grid(numRows, numCols);		
 		GUI gui = new GUI(grid, cellSize, gap, clockSpeed, aliveColor, deadColor, gapColor);
@@ -80,7 +82,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	private Point getPos(MouseEvent e)
 	{
 		int x = e.getX() / (paintPanel.getGap() + paintPanel.getCellSize());
-		int y = paintPanel.getNumCols() - e.getY() / (paintPanel.getGap() + paintPanel.getCellSize()) - 1;
+		int y = paintPanel.getNumRows() - e.getY() / (paintPanel.getGap() + paintPanel.getCellSize()) - 1;
 		return new Point(x, y);
 	}
 	

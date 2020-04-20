@@ -70,7 +70,7 @@ public class PaintPanel extends JPanel
 	private void paint(Graphics g, Grid.Cell cell)
 	{		
 		int x = cell.pos.x * (cellSize + gap) + gap;
-		int y = (grid.getNumCols() - cell.pos.y - 1) * (cellSize + gap) + gap + gap;
+		int y = (grid.getNumRows() - cell.pos.y - 1) * (cellSize + gap) + gap + gap;
 		g.setColor(grid.isAlive(cell) ? aliveColor : deadColor);
 		g.fillRect(x, y, cellSize, cellSize);
 	}
