@@ -26,10 +26,14 @@ public class PaintPanel extends JPanel
 		this.gapColor = gapColor;
 		
 		grid = toPaint;		
+	}
+	
+	public Dimension getPreferredSize()
+	{
 		Dimension preferredSize = new Dimension(0, 0);
 		preferredSize.width = cellSize * grid.getNumCols() + (grid.getNumCols() + 1) * gap;
 		preferredSize.height = cellSize * grid.getNumRows() + (grid.getNumRows() + 2) * gap;
-		setPreferredSize(preferredSize);
+		return preferredSize;
 	}
 	
 	public void tick(long millis)
@@ -38,10 +42,6 @@ public class PaintPanel extends JPanel
 		
 		begin = System.currentTimeMillis();
 		grid.tick();
-		end = System.currentTimeMillis();
-		millis -= end - begin;
-		
-		begin = System.currentTimeMillis();
 		repaint();
 		end = System.currentTimeMillis();
 		millis -= end - begin;

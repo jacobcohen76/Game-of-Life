@@ -1,4 +1,3 @@
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -12,7 +11,6 @@ public class Grid implements Iterable<Grid.Cell>
 	private int rowPad;
 	private int colPad;
 	private Cell[] array;
-	private HashMap<Cell, Integer> livingNeighborMap;
 	
 	public Grid(int numRows, int numCols, int rowPad, int colPad)
 	{
@@ -25,7 +23,6 @@ public class Grid implements Iterable<Grid.Cell>
 		this.colPad = 0;
 		
 		array = new Cell[numRows * numCols];
-		livingNeighborMap = new HashMap<Cell, Integer>();
 		
 		for(int row = 0; row < numRows; row++)
 			for(int col = 0; col < numCols; col++)
@@ -135,7 +132,7 @@ public class Grid implements Iterable<Grid.Cell>
 	private void updateLivingNeighborMap()
 	{
 		for(Cell cell : array)
-			livingNeighborMap.put(cell, cell.getNumLivingNeighbors());
+			cell.updateLivingNeighbors();
 	}
 	
 	private void updateStatus()
@@ -165,6 +162,7 @@ public class Grid implements Iterable<Grid.Cell>
 		protected Point pos;
 		protected boolean status;
 		private Cell[] neighbors;
+		private int numLivingNeighbors;
 		
 		public Cell(Point pos, boolean status)
 		{
@@ -190,11 +188,18 @@ public class Grid implements Iterable<Grid.Cell>
 		
 		protected void updateStatus()
 		{
-			int numLivingNeighbors = livingNeighborMap.get(this);
 			if(isDead(this))
 				status = numLivingNeighbors == 3;
 			else if(numLivingNeighbors != 2 && numLivingNeighbors != 3)
 				status = DEAD;
+		}
+		
+		public void updateLivingNeighbors()
+		{
+			numLivingNeighbors = 0;
+			for(Cell cell : neighbors)
+				if(isAlive(cell))
+					numLivingNeighbors++;
 		}
 		
 		protected int getNumLivingNeighbors()
@@ -243,8 +248,9 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	public void setStatus(int row, int col, boolean status)
 	{
-		get(row, col).status = status;
-	}
+		if(isWithinBounds(row, col))
+				get(row, col).status = status;
+	}	
 	
 	public void setStatus(Point pos, boolean status)
 	{

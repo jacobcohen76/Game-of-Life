@@ -1,4 +1,6 @@
 import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -7,7 +9,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.JFrame;
 
-public class GUI extends JFrame implements MouseListener, MouseMotionListener
+public class GUI extends JFrame implements MouseListener, MouseMotionListener, KeyListener
 {
 	private static final long serialVersionUID = 6411499808530678723L;
 	
@@ -28,13 +30,14 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener
 		paintPanel = new PaintPanel(grid, cellSize, gap, aliveColor, deadColor, gapColor);
 		
 		setTitle("The Game of Life");
-		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		getContentPane().add(paintPanel);
 		paintPanel.addMouseListener(this);
 		paintPanel.addMouseMotionListener(this);
+		this.addKeyListener(this);
 		pack();
+		setLocationRelativeTo(null);
 		setVisible(true);
 	}
 	
@@ -45,13 +48,13 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener
 		int numCols = 100;
 		
 		int cellSize = 8;
-		int gap = 1;
+		int gap = 0;
 		
 		long clockSpeed = 100L;
 		
-		Color aliveColor = Color.BLACK;
-		Color deadColor = Color.WHITE;
-		Color gapColor = Color.LIGHT_GRAY;
+		Color aliveColor = Color.RED;
+		Color deadColor = Color.CYAN;
+		Color gapColor = Color.WHITE;
 		
 		Grid grid = new Grid(numRows, numCols);		
 		GUI gui = new GUI(grid, cellSize, gap, clockSpeed, aliveColor, deadColor, gapColor);
@@ -85,12 +88,8 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener
 	public void mouseClicked(MouseEvent e)
 	{
 		button = e.getButton();
-		if(e.getButton() == MouseEvent.BUTTON1 && playing == false)
+		if(e.getButton() == MouseEvent.BUTTON1)
 			paintPanel.toggle(getPos(e));
-		else if(playing == false)
-			executor.execute(new Play(Thread.MAX_PRIORITY));
-		else
-			playing = false;
 	}
 
 	@Override
@@ -126,6 +125,29 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener
 
 	@Override
 	public void mouseMoved(MouseEvent e)
+	{
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e)
+	{
+
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e)
+	{
+		if(e.getKeyCode() == KeyEvent.VK_SPACE)
+			if(playing == false)
+				executor.execute(new Play(Thread.MAX_PRIORITY));
+			else
+				playing = false;
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e)
 	{
 		
 	}
