@@ -70,8 +70,8 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
-		int numRows = 500;
-		int numCols = 500;
+		int numRows = 800;
+		int numCols = 800;
 		
 		int cellSize = 1;
 		int gap = 0;
@@ -133,6 +133,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		button = e.getButton();
 		pressedPoint = e.getPoint();
+		prev = e.getPoint();
 	}
 
 	@Override
@@ -153,15 +154,20 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		
 	}
+	
+	private java.awt.Point prev;
 
 	@Override
 	public void mouseDragged(MouseEvent e)
 	{
 		if(MouseEvent.BUTTON1 == button)
 			paintPanel.set(getPos(e), button == MouseEvent.BUTTON1);
-		else if(MouseEvent.BUTTON2 == button)
+		else if(MouseEvent.BUTTON3 == button)
 		{
-			
+			paintPanel.shiftX += e.getX() - prev.x;
+			paintPanel.shiftY += e.getY() - prev.y;
+			prev = e.getPoint();
+			repaint();
 		}
 	}
 	
@@ -176,7 +182,6 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@Override
 	public void keyTyped(KeyEvent e)
 	{
-
 		
 	}
 	

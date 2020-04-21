@@ -131,9 +131,6 @@ public class PaintPanel extends JPanel
 			paint(g, cell);
 	}
 	
-	private int dx = 0;
-	private int dy = 0;
-	
 	public void zoom(int amount, java.awt.Point p)
 	{	
 		Point maintainPosition = getPos(p);
