@@ -1,10 +1,14 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,7 +17,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.JFrame;
 
-public class GUI extends JFrame implements MouseListener, MouseMotionListener, KeyListener
+public class GUI extends JFrame implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener
 {
 	private static final long serialVersionUID = 6411499808530678723L;
 	
@@ -36,10 +40,27 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		
 		setTitle("The Game of Life");
 		
+		addComponentListener(new ComponentAdapter()
+		{
+            public void componentResized(ComponentEvent e)
+            {
+            	resizedEvent(e);
+            }
+		});
+		
+		addComponentListener(new ComponentAdapter()
+		{
+            public void componentMoved(ComponentEvent e)
+            {
+            	movedEvent(e);
+            }
+		});
+		
 		getContentPane().setLayout(new BorderLayout());
 		getContentPane().add(paintPanel, BorderLayout.CENTER);
 		paintPanel.addMouseListener(this);
 		paintPanel.addMouseMotionListener(this);
+		paintPanel.addMouseWheelListener(this);
 		this.addKeyListener(this);
 		pack();
 		setLocationRelativeTo(null);
@@ -49,10 +70,10 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
-		int numRows = 1000;
-		int numCols = 1000;
+		int numRows = 500;
+		int numCols = 500;
 		
-		int cellSize = 8;
+		int cellSize = 1;
 		int gap = 0;
 		
 		long clockSpeed = 100L;
@@ -82,11 +103,19 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		}
 	}
 	
+	public void resizedEvent(ComponentEvent e)
+	{
+		paintPanel.resetFirstPaint();
+	}
+	
+	public void movedEvent(ComponentEvent e)
+	{
+		paintPanel.resetFirstPaint();
+	}
+	
 	private Point getPos(MouseEvent e)
 	{
-		int x = e.getX() / (paintPanel.getGap() + paintPanel.getCellSize());
-		int y = paintPanel.getNumRows() - e.getY() / (paintPanel.getGap() + paintPanel.getCellSize()) - 1;
-		return new Point(x, y);
+		return paintPanel.getPos(e.getPoint());
 	}
 	
 	@Override
@@ -96,11 +125,14 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		if(e.getButton() == MouseEvent.BUTTON1)
 			paintPanel.toggle(getPos(e));
 	}
+	
+	java.awt.Point pressedPoint = null;
 
 	@Override
 	public void mousePressed(MouseEvent e)
 	{
 		button = e.getButton();
+		pressedPoint = e.getPoint();
 	}
 
 	@Override
@@ -125,13 +157,20 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@Override
 	public void mouseDragged(MouseEvent e)
 	{
-		paintPanel.set(getPos(e), button == MouseEvent.BUTTON1);
+		if(MouseEvent.BUTTON1 == button)
+			paintPanel.set(getPos(e), button == MouseEvent.BUTTON1);
+		else if(MouseEvent.BUTTON2 == button)
+		{
+			
+		}
 	}
+	
+	private java.awt.Point currentMousePosition = new java.awt.Point(0, 0);
 
 	@Override
 	public void mouseMoved(MouseEvent e)
 	{
-		
+		currentMousePosition = e.getPoint();
 	}
 
 	@Override
@@ -184,5 +223,11 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	public void keyReleased(KeyEvent e)
 	{
 		
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{
+		paintPanel.zoom(e.getWheelRotation(), currentMousePosition);
 	}
 }

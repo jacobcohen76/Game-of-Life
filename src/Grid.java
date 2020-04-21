@@ -1,4 +1,3 @@
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -13,13 +12,8 @@ public class Grid implements Iterable<Grid.Cell>
 	private int colPad;
 	private Cell[] array;
 	
-	public Grid(boolean[][] alive, int numRows, int numCols, int rowPad, int colPad)
-	{
-		this(numRows, numCols, rowPad, colPad);
-		for(int i = 0; i < alive.length; i++)
-			for(int j = 0; j < alive[i].length; j++)
-				get(i, j).status = alive[i][j];
-	}
+	private LinkedList<Cell> aliveList;
+	public LinkedList<Cell> changedList;
 	
 	public Grid(int numRows, int numCols, int rowPad, int colPad)
 	{
@@ -45,6 +39,9 @@ public class Grid implements Iterable<Grid.Cell>
 		for(int row = -rowPad; row < (this.numRows + rowPad); row++)
 			for(int col = -colPad; col < (this.numCols + colPad); col++)
 				get(row, col).initNeighbors();
+		
+		aliveList = new LinkedList<Cell>();
+		changedList = new LinkedList<Cell>();
 	}
 	
 	public Grid(int numRows, int numCols)
@@ -189,8 +186,25 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	private void updateStatus()
 	{
-		for(Cell cell : array)
+		Iterator<Cell> itr = aliveList.iterator();
+		LinkedList<Cell> toAdd = new LinkedList<Cell>();
+		while(itr.hasNext())
+		{
+			Cell cell = itr.next();
 			cell.updateStatus();
+			for(Cell neighbor : cell.neighbors)
+			{
+				if(neighbor.status == DEAD)
+				{
+					neighbor.updateStatus();
+					if(neighbor.status == ALIVE)
+						toAdd.push(neighbor);
+				}
+			}
+			if(cell.status == DEAD)
+				itr.remove();
+		}
+		aliveList.addAll(toAdd);
 	}
 	
 	public void tick()
@@ -209,19 +223,19 @@ public class Grid implements Iterable<Grid.Cell>
 		return (cell == null) || cell.status == DEAD;
 	}
 	
-	public class Cell implements Serializable
-	{
-		private static final long serialVersionUID = -4598658155078109870L;
-		
+	public class Cell
+	{	
 		protected Point pos;
-		protected boolean status;
-		private Cell[] neighbors;
+		protected Cell[] neighbors;
 		private int numLivingNeighbors;
+		public boolean status;
+		public boolean prevStatus;
 		
 		public Cell(Point pos, boolean status)
 		{
 			this.pos = pos;
 			this.status = status;
+			prevStatus = status;
 			neighbors = null;
 		}
 		
@@ -242,6 +256,7 @@ public class Grid implements Iterable<Grid.Cell>
 		
 		protected void updateStatus()
 		{
+			prevStatus = status;
 			if(isDead(this))
 				status = numLivingNeighbors == 3;
 			else if(numLivingNeighbors != 2 && numLivingNeighbors != 3)
@@ -254,14 +269,6 @@ public class Grid implements Iterable<Grid.Cell>
 			for(Cell cell : neighbors)
 				if(isAlive(cell))
 					numLivingNeighbors++;
-		}
-		
-		protected int getNumLivingNeighbors()
-		{
-			int numLivingNeighbors = 0;
-			for(Cell cell : neighbors)
-				numLivingNeighbors += isAlive(cell) ? 1 : 0;
-			return numLivingNeighbors;
 		}
 		
 		protected Cell getRelative(Vector v)
@@ -303,8 +310,18 @@ public class Grid implements Iterable<Grid.Cell>
 	public void setStatus(int row, int col, boolean status)
 	{
 		if(isWithinBounds(row, col))
-				get(row, col).status = status;
-	}	
+		{
+			Cell cell = get(row, col);
+			cell.status = status;
+			if(status == ALIVE)
+				aliveList.add(cell);
+		}
+	}
+	
+	public void toggle(int row, int col)
+	{
+		setStatus(row, col, !get(row, col).status);
+	}
 	
 	public void setStatus(Point pos, boolean status)
 	{
