@@ -41,8 +41,8 @@ public class PaintPanel extends JPanel
 		this.deadColor = deadColor;
 		this.gapColor = gapColor;
 		
-		rowsToDisplay = 500;
-		colsToDisplay = 500;
+		rowsToDisplay = 800;
+		colsToDisplay = 800;
 		relativeRow = 0;
 		relativeCol = 0;
 		shiftX = 0;
@@ -55,7 +55,7 @@ public class PaintPanel extends JPanel
 	{
 		Dimension preferredSize = new Dimension(0, 0);
 		preferredSize.width = cellSize * colsToDisplay + (colsToDisplay + 1) * gap;
-		preferredSize.height = cellSize * rowsToDisplay + (rowsToDisplay + 2) * gap;
+		preferredSize.height = cellSize * rowsToDisplay + (rowsToDisplay + 1) * gap;
 		return preferredSize;
 	}
 	
@@ -107,13 +107,14 @@ public class PaintPanel extends JPanel
 			initBackground(g);
 			initCells(g);
 		}
-		
+		int rowsToDisplay = (getWidth() - ((shiftX > 0) ? shiftX : 0)) / cellSize + 1;
+		int colsToDisplay = (getHeight() - ((shiftY > 0) ? shiftY : 0)) / cellSize + 1;
 		for(int row = relativeRow; row < rowsToDisplay && row < (rowsToDisplay + relativeRow); row++)
 		{
 			for(int col = relativeCol; col < colsToDisplay && col < (colsToDisplay + relativeCol); col++)
 			{
 				Grid.Cell cell = grid.get(row, col);
-				if(cell.prevStatus != cell.status)
+				if(cell != null && cell.prevStatus != cell.status)
 					paint(g, cell);
 			}
 		}
@@ -132,29 +133,13 @@ public class PaintPanel extends JPanel
 	}
 	
 	public void zoom(int amount, java.awt.Point p)
-	{	
+	{
 		Point maintainPosition = getPos(p);
 		cellSize -= amount;
 		if(cellSize <= 0)
 			cellSize = 1;
 		shiftX = p.x - (maintainPosition.x - relativeCol) * (gap + cellSize);
 		shiftY = (maintainPosition.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize) + p.y;
-		
-//		Point ungetP = ungetPos(maintainPosition);
-//		shiftY -= ungetP.y - p.y;
-//		ungetP = ungetPos(maintainPosition);
-//		System.out.println(ungetP + " " + p + " " + cellSize);
-//		int dx = p.x - ungetP.x;
-//		
-////		shiftX -= dx;
-//		int dy = p.y - ungetP.y;
-////		shiftX -= dy;
-//		System.out.println(dx + " " + dy);
-//		System.out.println(ungetPos(maintainPosition));
-//		this.dx = dx;
-//		this.dy = dy;
-//		shiftX -= dx;
-//		shiftY += dy;
 		repaint();
 	}
 	
@@ -175,21 +160,21 @@ public class PaintPanel extends JPanel
 	public Point ungetPos(java.awt.Point p)
 	{
 		int x = (p.x - relativeCol) * (gap + cellSize) + shiftX;
-		int y = shiftY - (p.y - rowsToDisplay - relativeRow) * (gap + cellSize) + 1;
+		int y = shiftY - (p.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
 		return new Point(x, y);
 	}
 	
 	public Point ungetPos(Point p)
 	{
 		int x = (p.x - relativeCol) * (gap + cellSize) + shiftX;
-		int y = shiftY - (p.y - rowsToDisplay - relativeRow) * (gap + cellSize) + 1;
+		int y = shiftY - (p.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
 		return new Point(x, y);
 	}
 	
 	private void paint(Graphics g, Grid.Cell cell)
 	{		
 		int x = (cell.pos.x - relativeCol) * (gap + cellSize) + shiftX;;
-		int y = shiftY - (cell.pos.y - rowsToDisplay - relativeRow) * (gap + cellSize) + 1;
+		int y = shiftY - (cell.pos.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
 		g.setColor(grid.isAlive(cell) ? aliveColor : deadColor);
 		g.fillRect(x, y, cellSize, cellSize);
 	}

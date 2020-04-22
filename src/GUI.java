@@ -70,6 +70,8 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	@SuppressWarnings("unused")
 	public static void main(String args[])
 	{
+		System.setProperty("sun.java2d.opengl", "true");
+		
 		int numRows = 800;
 		int numCols = 800;
 		
