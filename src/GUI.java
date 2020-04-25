@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -9,9 +10,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,25 +18,31 @@ import javax.swing.JFrame;
 public class GUI extends JFrame implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener
 {
 	private static final long serialVersionUID = 6411499808530678723L;
+	private static final int TOGGLE = 0, LIFE = 1, KILL = 2;
 	
 	private long clockSpeed;
 	private int button;
 	private boolean playing;
-	
+	private int statusMode;
+	private int strokeMode;
 	private ExecutorService executor;
 	private PaintPanel paintPanel;
+	private java.awt.Point currentMousePosition;
+	private volatile boolean changed;
 	
-	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor)
+	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor, long repaintRate)
 	{
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.clockSpeed = clockSpeed;
 		button = MouseEvent.NOBUTTON;
 		playing = false;
-		
-		executor = Executors.newFixedThreadPool(1);
+		statusMode = TOGGLE;
+		strokeMode = LIFE;
+		executor = Executors.newFixedThreadPool(2);
 		paintPanel = new PaintPanel(grid, cellSize, gap, aliveColor, deadColor, gapColor);
-		
-		setTitle("The Game of Life");
+		currentMousePosition = new java.awt.Point(0, 0);
+		changed = false;
+		setTitle("The Game of Life ❚❚ Paused");
 		
 		addComponentListener(new ComponentAdapter()
 		{
@@ -63,7 +67,17 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		paintPanel.addMouseWheelListener(this);
 		this.addKeyListener(this);
 		pack();
+		
+		Dimension d = paintPanel.getPreferredSize();
+		paintPanel.shiftX = (paintPanel.getWidth() - d.width) / 2;
+		paintPanel.shiftY = (paintPanel.getHeight() - d.height) / 2;
+		if(paintPanel.shiftX < 0)
+			paintPanel.shiftX = 0;
+		if(paintPanel.shiftY < 0)
+			paintPanel.shiftY = 0;
+		
 		setLocationRelativeTo(null);
+		executor.execute(new RepaintRepeater(repaintRate));
 		setVisible(true);
 	}
 	
@@ -72,20 +86,52 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		System.setProperty("sun.java2d.opengl", "true");
 		
-		int numRows = 800;
-		int numCols = 800;
-		
-		int cellSize = 1;
-		int gap = 0;
-		
-		long clockSpeed = 100L;
-		
-		Color aliveColor = Color.WHITE;
-		Color deadColor = Color.BLACK;
-		Color gapColor = Color.LIGHT_GRAY;
+		LoadFromSettings.loadSettings();
+		int numRows = LoadFromSettings.numRows;
+		int numCols = LoadFromSettings.numCols;
+		int cellSize = LoadFromSettings.cellSize;
+		int gap = LoadFromSettings.gap;
+		long clockSpeed = LoadFromSettings.clockSpeed;
+		long repaintRate = LoadFromSettings.repaintRate;
+		Color aliveColor = LoadFromSettings.aliveColor;
+		Color deadColor = LoadFromSettings.deadColor;
+		Color gapColor = LoadFromSettings.gapColor;
 		
 		Grid grid = new Grid(numRows, numCols);		
-		GUI gui = new GUI(grid, cellSize, gap, clockSpeed, aliveColor, deadColor, gapColor);
+		GUI gui = new GUI(grid, cellSize, gap, clockSpeed, aliveColor, deadColor, gapColor, repaintRate);
+	}
+	
+	private class RepaintRepeater extends Thread
+	{
+		private long delay;
+		private long start;
+		
+		public RepaintRepeater(long delay)
+		{
+			this.delay = delay;
+			start = 0L;
+		}
+		
+		public void run()
+		{
+			while(true)
+			{
+				if(changed || drawnLine)
+				{
+					changed &= false;
+					start = System.currentTimeMillis();
+					repaint();
+					try
+					{
+						Thread.sleep(delay - (System.currentTimeMillis() - start));
+					}
+					catch(Exception ex)
+					{
+						
+					}
+				}
+			}
+		}
 	}
 	
 	private class Play extends Thread
@@ -97,11 +143,14 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		
 		public void run()
 		{
-			setTitle("▶ Running");
+			setTitle("The Game of Life ▶ Running");
 			playing = true;
 			while(playing == true)
+			{
 				paintPanel.tick(clockSpeed);
-			setTitle("❚❚ Paused");
+				changed |= true;
+			}
+			setTitle("The Game of Life ❚❚ Paused");
 		}
 	}
 	
@@ -124,8 +173,22 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	public void mouseClicked(MouseEvent e)
 	{
 		button = e.getButton();
-		if(e.getButton() == MouseEvent.BUTTON1)
-			paintPanel.toggle(getPos(e));
+		if(playing == false && e.getButton() == MouseEvent.BUTTON1)
+		{
+			switch(statusMode)
+			{
+			case TOGGLE:
+				paintPanel.toggle(getPos(e));
+				break;
+			case LIFE:
+				paintPanel.set(getPos(e), true);
+				break;
+			case KILL:
+				paintPanel.set(getPos(e), false);
+				break;
+			}
+			changed |= true;
+		}
 	}
 	
 	java.awt.Point pressedPoint = null;
@@ -142,7 +205,6 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	public void mouseReleased(MouseEvent e)
 	{
 		button = e.getButton();
-		paintPanel.repaint();
 	}
 
 	@Override
@@ -150,6 +212,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		
 	}
+	public boolean drawnLine;
 
 	@Override
 	public void mouseExited(MouseEvent e)
@@ -158,22 +221,31 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	}
 	
 	private java.awt.Point prev;
-
+	
 	@Override
 	public void mouseDragged(MouseEvent e)
 	{
-		if(MouseEvent.BUTTON1 == button)
-			paintPanel.set(getPos(e), button == MouseEvent.BUTTON1);
+		if(playing == false && MouseEvent.BUTTON1 == button)
+		{
+			switch(strokeMode)
+			{
+			case LIFE:
+				paintPanel.markStroke(e.getPoint(), Grid.ALIVE);
+				break;
+			case KILL:
+				paintPanel.markStroke(e.getPoint(), Grid.DEAD);
+				break;
+			}
+		}
 		else if(MouseEvent.BUTTON3 == button)
 		{
 			paintPanel.shiftX += e.getX() - prev.x;
 			paintPanel.shiftY += e.getY() - prev.y;
 			prev = e.getPoint();
-			repaint();
+			changed |= true;
+			paintPanel.resetFirstPaint();
 		}
 	}
-	
-	private java.awt.Point currentMousePosition = new java.awt.Point(0, 0);
 
 	@Override
 	public void mouseMoved(MouseEvent e)
@@ -187,54 +259,51 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		
 	}
 	
-	boolean ctrl = false;
-	
 	@Override
 	public void keyPressed(KeyEvent e)
 	{
 		if(e.getKeyCode() == KeyEvent.VK_SPACE)
+		{
 			if(playing == false)
 				executor.execute(new Play(Thread.MAX_PRIORITY));
 			else
 				playing = false;
-		if(e.getKeyCode() == KeyEvent.VK_S)
+		}
+		else if(e.getKeyCode() == KeyEvent.VK_CONTROL)
 		{
-			try {
-				paintPanel.save(new File("E:\\grid"));
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			//cycles through toggle, life, and kill
+			switch(statusMode)
+			{
+			case TOGGLE:
+				statusMode = LIFE;
+				break;
+			case LIFE:
+				statusMode = KILL;
+				break;
+			case KILL:
+				statusMode = TOGGLE;
+				break;
 			}
 		}
-		else if(e.getKeyCode() == KeyEvent.VK_L)
+		else if(e.getKeyCode() == KeyEvent.VK_SHIFT)
 		{
-			try {
-				paintPanel.load(new File("E:\\grid"));
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			strokeMode = KILL;
 		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e)
 	{
-		
+		if(e.getKeyCode() == KeyEvent.VK_SHIFT)
+		{
+			strokeMode = LIFE;
+		}
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e)
 	{
-		paintPanel.zoom(e.getWheelRotation(), currentMousePosition);
+		changed |= paintPanel.zoom(e.getWheelRotation(), currentMousePosition);
+		paintPanel.resetFirstPaint();
 	}
 }

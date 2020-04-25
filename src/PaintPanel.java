@@ -24,39 +24,31 @@ public class PaintPanel extends JPanel
 	private Color deadColor;
 	private Color gapColor;
 	
-	public int rowsToDisplay;
-	public int colsToDisplay;
-	public int relativeRow;
-	public int relativeCol;
-	
 	public int shiftX;
 	public int shiftY;
-
+	int minSize;
+	
 	public PaintPanel(Grid toPaint, int cellSize, int gap, Color aliveColor, Color deadColor, Color gapColor)
 	{
 		this.cellSize = cellSize;
 		this.gap = gap;
+		minSize = cellSize;
 		
 		this.aliveColor = aliveColor;
 		this.deadColor = deadColor;
 		this.gapColor = gapColor;
 		
-		rowsToDisplay = 800;
-		colsToDisplay = 800;
-		relativeRow = 0;
-		relativeCol = 0;
 		shiftX = 0;
 		shiftY = 0;
 		
-		grid = toPaint;		
+		grid = toPaint;
 	}
 	
 	public Dimension getPreferredSize()
 	{
-		Dimension preferredSize = new Dimension(0, 0);
-		preferredSize.width = cellSize * colsToDisplay + (colsToDisplay + 1) * gap;
-		preferredSize.height = cellSize * rowsToDisplay + (rowsToDisplay + 1) * gap;
-		return preferredSize;
+		int width = (cellSize + gap) * grid.getNumCols();
+		int height = (cellSize + gap) * grid.getNumRows();
+		return new Dimension(width, height);
 	}
 	
 	public void save(File file) throws FileNotFoundException, IOException
@@ -79,7 +71,6 @@ public class PaintPanel extends JPanel
 		
 		begin = System.currentTimeMillis();
 		grid.tick();
-		repaint();
 		end = System.currentTimeMillis();
 		millis -= end - begin;
 		pause(millis);
@@ -106,16 +97,39 @@ public class PaintPanel extends JPanel
 		{
 			initBackground(g);
 			initCells(g);
+			firstPaint = false;
 		}
-		int rowsToDisplay = (getWidth() - ((shiftX > 0) ? shiftX : 0)) / cellSize + 1;
-		int colsToDisplay = (getHeight() - ((shiftY > 0) ? shiftY : 0)) / cellSize + 1;
-		for(int row = relativeRow; row < rowsToDisplay && row < (rowsToDisplay + relativeRow); row++)
+		if(toRepaint != null)
 		{
-			for(int col = relativeCol; col < colsToDisplay && col < (colsToDisplay + relativeCol); col++)
+			g.setColor(color ? aliveColor : deadColor);
+			g.fillRect(toRepaint.x, toRepaint.y, cellSize, cellSize);
+			toRepaint = null;
+		}
+		else
+		{
+			initBackground(g);
+			
+			int startingRow = ((shiftY - getHeight()) / (gap + cellSize) - 1) + grid.getNumRows();
+			int startingCol = - shiftX / (gap + cellSize);
+			int finalRow = (shiftY / (gap + cellSize) - 1) + grid.getNumRows() + 1;
+			int finalCol = (getWidth() - shiftX) / (gap + cellSize) + 1;
+			
+			if(startingRow < 0)
+				startingRow = 0;
+			if(startingCol < 0)
+				startingCol = 0;
+			if(finalCol > grid.getNumCols())
+				finalCol = grid.getNumCols();
+			if(finalRow > grid.getNumRows())
+				finalRow = grid.getNumRows();
+			
+			for(int row = startingRow; row < finalRow; row++)
 			{
-				Grid.Cell cell = grid.get(row, col);
-				if(cell != null && cell.prevStatus != cell.status)
+				for(int col = startingCol; col < finalCol; col++)
+				{
+					Grid.Cell cell = grid.get(row, col);
 					paint(g, cell);
+				}
 			}
 		}
 	}
@@ -128,53 +142,78 @@ public class PaintPanel extends JPanel
 	
 	private void initCells(Graphics g)
 	{
-		for(Grid.Cell cell : grid)
-			paint(g, cell);
+		int startingRow = ((shiftY - getHeight()) / (gap + cellSize) - 1) + grid.getNumRows();
+		int startingCol = - shiftX / (gap + cellSize);
+		int finalRow = (shiftY / (gap + cellSize) - 1) + grid.getNumRows() + 1;
+		int finalCol = (getWidth() - shiftX) / (gap + cellSize) + 1;
+		
+		if(startingRow < 0)
+			startingRow = 0;
+		if(startingCol < 0)
+			startingCol = 0;
+		if(finalCol > grid.getNumCols())
+			finalCol = grid.getNumCols();
+		if(finalRow > grid.getNumRows())
+			finalRow = grid.getNumRows();
+		
+		for(int row = startingRow; row < finalRow; row++)
+		{
+			for(int col = startingCol; col < finalCol; col++)
+			{
+				Grid.Cell cell = grid.get(row, col);
+				paint(g, cell);
+			}
+		}
 	}
 	
-	public void zoom(int amount, java.awt.Point p)
+	public boolean zoom(int amount, java.awt.Point p)
 	{
+		if(cellSize == minSize && amount >= 0)
+			return false;
 		Point maintainPosition = getPos(p);
+		Point oldCorner = ungetPos(maintainPosition);
 		cellSize -= amount;
-		if(cellSize <= 0)
-			cellSize = 1;
-		shiftX = p.x - (maintainPosition.x - relativeCol) * (gap + cellSize);
-		shiftY = (maintainPosition.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize) + p.y;
-		repaint();
+		if(cellSize <= minSize)
+			cellSize = minSize;
+		shiftX = p.x - maintainPosition.x * (gap + cellSize);
+		shiftY = (maintainPosition.y - grid.getNumRows() + 1) * (gap + cellSize) + p.y;
+		shiftX += oldCorner.x - p.x;
+		shiftY += oldCorner.y - p.y;
+		return true;
 	}
 	
 	public Point getPos(java.awt.Point p)
 	{
-		int x = (p.x - shiftX) / (gap + cellSize) + relativeCol;
-		int y = ((shiftY - p.y) / (gap + cellSize) - 1) + rowsToDisplay + relativeRow;
+		int x = (p.x - shiftX) / (gap + cellSize);
+		int y = ((shiftY - p.y) / (gap + cellSize) - 1) + grid.getNumRows();
 		return new Point(x, y);
 	}
 	
 	public Point getPos(Point p)
 	{
-		int x = (p.x - shiftX) / (gap + cellSize) + relativeCol;
-		int y = ((shiftY - p.y) / (gap + cellSize) - 1) + rowsToDisplay + relativeRow;
+		int x = (p.x - shiftX) / (gap + cellSize);
+		int y = ((shiftY - p.y) / (gap + cellSize) - 1) + grid.getNumRows();
 		return new Point(x, y);
 	}
 	
 	public Point ungetPos(java.awt.Point p)
 	{
-		int x = (p.x - relativeCol) * (gap + cellSize) + shiftX;
-		int y = shiftY - (p.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
+		int x = p.x * (gap + cellSize) + shiftX;
+		int y = shiftY - (p.y - grid.getNumRows()+ 1) * (gap + cellSize);
 		return new Point(x, y);
 	}
 	
 	public Point ungetPos(Point p)
 	{
-		int x = (p.x - relativeCol) * (gap + cellSize) + shiftX;
-		int y = shiftY - (p.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
+		int x = p.x * (gap + cellSize) + shiftX;
+		int y = shiftY - (p.y - grid.getNumRows() + 1) * (gap + cellSize);
 		return new Point(x, y);
 	}
 	
 	private void paint(Graphics g, Grid.Cell cell)
 	{		
-		int x = (cell.pos.x - relativeCol) * (gap + cellSize) + shiftX;;
-		int y = shiftY - (cell.pos.y - rowsToDisplay - relativeRow + 1) * (gap + cellSize);
+		int x = cell.pos.x * (gap + cellSize) + shiftX;
+		int y = shiftY - (cell.pos.y - grid.getNumRows() + 1) * (gap + cellSize);
 		g.setColor(grid.isAlive(cell) ? aliveColor : deadColor);
 		g.fillRect(x, y, cellSize, cellSize);
 	}
@@ -202,7 +241,6 @@ public class PaintPanel extends JPanel
 	public void toggle(int row, int col)
 	{
 		grid.toggle(row, col);
-		repaint();
 	}
 	
 	public void toggle(Point pos)
@@ -213,6 +251,18 @@ public class PaintPanel extends JPanel
 	public void set(int row, int col, boolean status)
 	{
 		grid.setStatus(row, col, status);
+	}
+	
+	private Point toRepaint = null;
+	private boolean color = false;
+	
+	public void markStroke(java.awt.Point p, boolean status)
+	{
+		Point pt = getPos(p);
+		color = status;
+		grid.setStatus(pt, status);
+		toRepaint = ungetPos(pt);
+		repaint(100, toRepaint.x, toRepaint.y, cellSize, cellSize);
 	}
 	
 	public void set(Point pos, boolean status)
