@@ -1,5 +1,5 @@
 import java.awt.Color;
-import java.io.File;
+import java.io.InputStream;
 import java.util.Scanner;
 
 public class LoadFromSettings
@@ -21,8 +21,9 @@ public class LoadFromSettings
 	{
 		try
 		{
-			File file = new File("resources\\settings.txt");
-			Scanner scan = new Scanner(file);
+			Point p = new Point(0, 0);
+			InputStream in = p.getClass().getResourceAsStream("settings.txt");
+			Scanner scan = new Scanner(in);
 			scan.next();
 			scan.next();
 			numRows = scan.nextInt();
@@ -52,21 +53,6 @@ public class LoadFromSettings
 			gapColor = new Color(scan.nextInt(16));
 			scan.close();
 		}
-//		catch (FileNotFoundException e)
-//		{
-//			e.printStackTrace();
-//			loadDefaults();
-//		}
-//		catch (Exception e)
-//		{
-//			e.printStackTrace();
-//			loadDefaults();
-//		}
-//		catch(Error e)
-//		{
-//			e.printStackTrace();
-//			loadDefaults();
-//		}
 		catch(Throwable t)
 		{
 			t.printStackTrace();

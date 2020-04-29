@@ -18,10 +18,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -55,7 +57,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	private java.awt.Point currentMousePosition;
 	private volatile boolean changed;
 	
-	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor, long repaintRate, List<? extends Image> icons)
+	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor, long repaintRate)
 	{
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.clockSpeed = clockSpeed;
@@ -120,6 +122,11 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		pack();
 		
 		setLocationRelativeTo(null);
+		List<Image> icons = new LinkedList<Image>();
+		icons.add((new ImageIcon(getClass().getClassLoader().getResource("icon_16x16.PNG"))).getImage());
+		icons.add((new ImageIcon(getClass().getClassLoader().getResource("icon_32x32.PNG"))).getImage());
+		icons.add((new ImageIcon(getClass().getClassLoader().getResource("icon_64x64.PNG"))).getImage());
+		icons.add((new ImageIcon(getClass().getClassLoader().getResource("icon_128x128.PNG"))).getImage());
 		setIconImages(icons);
 		
 		setVisible(true);

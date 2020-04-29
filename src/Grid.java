@@ -109,6 +109,7 @@ public class Grid implements Iterable<Grid.Cell>
 					aliveList.add(get(i, j));
 			}
 		}
+		
 		for(int row = -rowPad; row < (this.numRows + rowPad); row++)
 			for(int col = -colPad; col < (this.numCols + colPad); col++)
 				get(row, col).initNeighbors();
@@ -409,13 +410,10 @@ public class Grid implements Iterable<Grid.Cell>
 	 */
 	public void setStatus(int row, int col, boolean status)
 	{
-		if(isWithinBounds(row, col))
-		{
-			Cell cell = get(row, col);
-			cell.status = status;
-			if(status == ALIVE)
-				aliveList.add(cell);
-		}
+		Cell cell = get(row, col);
+		cell.status = status;
+		if(status == ALIVE)
+			aliveList.add(cell);
 	}
 	
 	public void toggle(int row, int col)
