@@ -95,6 +95,16 @@ public class Point implements Cloneable, Serializable
 		return new Point(x, y);
 	}
 	
+	private int cantor(int x, int y)
+	{
+		return (x + y) * (x + y + 1) / 2 + y;
+	}
+	
+	public int hashCode()
+	{
+		return cantor(x, y);
+	}
+	
 	public String toString()
 	{
 		return "(" + x + ", " + y + ")";

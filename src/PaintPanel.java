@@ -11,6 +11,12 @@ import java.io.ObjectOutputStream;
 
 import javax.swing.JPanel;
 
+/**
+ * The view in our MVC design pattern.
+ * Displays the model so the user can interact with it.
+ * 
+ * @author Jacob Cohen
+ */
 public class PaintPanel extends JPanel
 {
 	private static final long serialVersionUID = 8915539899387579004L;
@@ -259,10 +265,13 @@ public class PaintPanel extends JPanel
 	public void markStroke(java.awt.Point p, boolean status)
 	{
 		Point pt = getPos(p);
-		color = status;
-		grid.setStatus(pt, status);
-		toRepaint = ungetPos(pt);
-		repaint(100, toRepaint.x, toRepaint.y, cellSize, cellSize);
+		if(grid.isWithinRealBounds(pt.y, pt.x))
+		{
+			color = status;
+			grid.setStatus(pt, status);
+			toRepaint = ungetPos(pt);
+			repaint(100, toRepaint.x, toRepaint.y, cellSize, cellSize);
+		}
 	}
 	
 	public void set(Point pos, boolean status)

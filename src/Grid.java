@@ -1,6 +1,12 @@
 import java.util.Iterator;
 import java.util.LinkedList;
 
+/**
+ * The model of our MVC design pattern. Models the grid and
+ * the building block Cells that it is made up of.
+ * 
+ * @author Jacob Cohen
+ */
 public class Grid implements Iterable<Grid.Cell>
 {	
 	public static final boolean ALIVE = true;
@@ -114,6 +120,23 @@ public class Grid implements Iterable<Grid.Cell>
 		return withinBounds;
 	}
 	
+	public boolean isWithinRealBounds(int row, int col)
+	{
+		boolean withinBounds = true;
+		
+		withinBounds &= 0 <= row;
+		withinBounds &= 0 <= col;
+		withinBounds &= row < numRows;
+		withinBounds &= col < numCols;
+		
+		return withinBounds;
+	}
+	
+	public boolean isWithinRealBounds(Point pos)
+	{
+		return isWithinRealBounds(pos.y, pos.x);
+	}
+	
 	public boolean isWithinBounds(Point pos)
 	{
 		return isWithinBounds(pos.y, pos.x);
@@ -151,6 +174,17 @@ public class Grid implements Iterable<Grid.Cell>
 		return set(pos.y, pos.x, data);
 	}
 	
+	/**
+	 * used to get an array of pointers to the 8 (or less if this
+	 * Cell is located in a corner) of a given Cell
+	 * 
+	 * @param cell
+	 * the cell to get the neighbors of
+	 * 
+	 * @return
+	 * an array of pointers to the 8 neighbors surround a given Cell,
+	 * can be less than 8 if it is in a corner
+	 */
 	private Cell[] getNeighbors(Cell cell)
 	{
 		LinkedList<Cell> neighbors = new LinkedList<Cell>();
@@ -178,12 +212,22 @@ public class Grid implements Iterable<Grid.Cell>
 		return neighborArray;
 	}
 	
+	/**
+	 * Updates the internal integer value stored in each cell that counts
+	 * how many of its neighbors are still alive
+	 */
 	private void updateLivingNeighborMap()
 	{
 		for(Cell cell : array)
 			cell.updateLivingNeighbors();
 	}
 	
+	/**
+	 * Updates the status of which Cells are alive and dead.
+	 * Major efficiency boost is achieved by maintaining a list
+	 * of living Cells and only Checking the Cells in this list,
+	 * and their dead neighbors.
+	 */
 	private void updateStatus()
 	{
 		Iterator<Cell> itr = aliveList.iterator();
@@ -207,6 +251,9 @@ public class Grid implements Iterable<Grid.Cell>
 		aliveList.addAll(toAdd);
 	}
 	
+	/**
+	 * Moves forward 1 generation
+	 */
 	public void tick()
 	{
 		updateLivingNeighborMap();
@@ -223,6 +270,12 @@ public class Grid implements Iterable<Grid.Cell>
 		return (cell == null) || cell.status == DEAD;
 	}
 	
+	/**
+	 * Molecular building block of our Grid, kind of like
+	 * a Node.
+	 * 
+	 * @author Jacob Cohen
+	 */
 	public class Cell
 	{	
 		protected Point pos;
@@ -271,6 +324,22 @@ public class Grid implements Iterable<Grid.Cell>
 					numLivingNeighbors++;
 		}
 		
+		/**
+		 * gets the Cell whose position is equal
+		 * to the position of this Cell plus some
+		 * Vector v, so if we are at the position
+		 * (100, 100), and the Vector v is <1, 3>
+		 * this method will return the Cell located
+		 * at (101, 103).
+		 * 
+		 * @param v
+		 * the relative distance from the Cell position
+		 * we want to get
+		 * 
+		 * @return
+		 * the Cell located at the position Vector v units
+		 * away from the relative position of this Cell
+		 */
 		protected Cell getRelative(Vector v)
 		{
 			return get(Point.add(pos, v));
@@ -286,9 +355,14 @@ public class Grid implements Iterable<Grid.Cell>
 				return false;
 		}
 		
+		/**
+		 * Perfect hash, abuses the fact that each Cell in our Grid will
+		 * have a unique Position, so we can use the Cantor Pairing function
+		 * to get a Perfect hash for the unique ordered pair of its position
+		 */
 		public int hashCode()
 		{
-			return pos.toString().hashCode();
+			return pos.hashCode();
 		}
 		
 		public String toString()
@@ -307,6 +381,26 @@ public class Grid implements Iterable<Grid.Cell>
 		return getStatus(pos.y, pos.x);
 	}
 	
+	/**
+	 * Sets the status of the Cell at the specified row and column position,
+	 * and updates the internal values necessary such as our alive list, and
+	 * and the previous status of that Cell.  If this used at the same time
+	 * update status is called a concurrency error may occur. This is because
+	 * of a critical section that occurs when iterating through our alive list,
+	 * and this method tried to add to that list at the same time it is being
+	 * iterated through. To prevent this, simply do not call this method when
+	 * the game is running.
+	 *  
+	 * @param row
+	 * the row index of the Cell to set the status of
+	 * 
+	 * @param col
+	 * the column index of the Cell to set the status of
+	 * 
+	 * @param status
+	 * the status to set the Cell at the specified row and column index of, use
+	 * true for ALIVE, and false for DEAD.
+	 */
 	public void setStatus(int row, int col, boolean status)
 	{
 		if(isWithinBounds(row, col))

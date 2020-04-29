@@ -1,6 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -10,11 +11,18 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.swing.JFrame;
 
+/**
+ * In the context of an MVC design pattern the GUI Object
+ * acts as the controller. Kind of counter-intuitive, but it is what it is.
+ * 
+ * @author Jacob Cohen
+ */
 public class GUI extends JFrame implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener
 {
 	private static final long serialVersionUID = 6411499808530678723L;
@@ -30,7 +38,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	private java.awt.Point currentMousePosition;
 	private volatile boolean changed;
 	
-	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor, long repaintRate)
+	public GUI(Grid grid, int cellSize, int gap, long clockSpeed, Color aliveColor, Color deadColor, Color gapColor, long repaintRate, List<? extends Image> icons)
 	{
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.clockSpeed = clockSpeed;
@@ -68,37 +76,19 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		this.addKeyListener(this);
 		pack();
 		
-		Dimension d = paintPanel.getPreferredSize();
-		paintPanel.shiftX = (paintPanel.getWidth() - d.width) / 2;
-		paintPanel.shiftY = (paintPanel.getHeight() - d.height) / 2;
-		if(paintPanel.shiftX < 0)
-			paintPanel.shiftX = 0;
-		if(paintPanel.shiftY < 0)
-			paintPanel.shiftY = 0;
-		
 		setLocationRelativeTo(null);
-		executor.execute(new RepaintRepeater(repaintRate));
+		setIconImages(icons);
+		
 		setVisible(true);
-	}
-	
-	@SuppressWarnings("unused")
-	public static void main(String args[])
-	{
-		System.setProperty("sun.java2d.opengl", "true");
 		
-		LoadFromSettings.loadSettings();
-		int numRows = LoadFromSettings.numRows;
-		int numCols = LoadFromSettings.numCols;
-		int cellSize = LoadFromSettings.cellSize;
-		int gap = LoadFromSettings.gap;
-		long clockSpeed = LoadFromSettings.clockSpeed;
-		long repaintRate = LoadFromSettings.repaintRate;
-		Color aliveColor = LoadFromSettings.aliveColor;
-		Color deadColor = LoadFromSettings.deadColor;
-		Color gapColor = LoadFromSettings.gapColor;
-		
-		Grid grid = new Grid(numRows, numCols);		
-		GUI gui = new GUI(grid, cellSize, gap, clockSpeed, aliveColor, deadColor, gapColor, repaintRate);
+		Dimension d = paintPanel.getPreferredSize();
+		paintPanel.shiftX = (getContentPane().getWidth() - d.width) / 2;
+		paintPanel.shiftY = (getContentPane().getHeight() - d.height) / 2;
+		executor.execute(new RepaintRepeater(repaintRate));
+//		if(paintPanel.shiftX < 0)
+//			paintPanel.shiftX = 0;
+//		if(paintPanel.shiftY < 0)
+//			paintPanel.shiftY = 0;
 	}
 	
 	private class RepaintRepeater extends Thread
@@ -116,7 +106,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		{
 			while(true)
 			{
-				if(changed || drawnLine)
+				if(changed)
 				{
 					changed &= false;
 					start = System.currentTimeMillis();
@@ -143,15 +133,33 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		
 		public void run()
 		{
-			setTitle("The Game of Life ▶ Running");
-			playing = true;
 			while(playing == true)
 			{
 				paintPanel.tick(clockSpeed);
 				changed |= true;
 			}
-			setTitle("The Game of Life ❚❚ Paused");
 		}
+	}
+	
+	public void play()
+	{
+		playing = true;
+		executor.execute(new Play(Thread.MAX_PRIORITY));
+		setTitle("The Game of Life ▶ Running");
+	}
+	
+	public void pause()
+	{
+		playing = false;
+		setTitle("The Game of Life ❚❚ Paused");
+	}
+	
+	public void togglePause()
+	{
+		if(playing)
+			pause();
+		else
+			play();
 	}
 	
 	public void resizedEvent(ComponentEvent e)
@@ -212,7 +220,6 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		
 	}
-	public boolean drawnLine;
 
 	@Override
 	public void mouseExited(MouseEvent e)
@@ -264,10 +271,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	{
 		if(e.getKeyCode() == KeyEvent.VK_SPACE)
 		{
-			if(playing == false)
-				executor.execute(new Play(Thread.MAX_PRIORITY));
-			else
-				playing = false;
+			togglePause();
 		}
 		else if(e.getKeyCode() == KeyEvent.VK_CONTROL)
 		{
