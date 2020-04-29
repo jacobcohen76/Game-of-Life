@@ -2,6 +2,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -11,11 +13,21 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  * In the context of an MVC design pattern the GUI Object
@@ -35,6 +47,11 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 	private int strokeMode;
 	private ExecutorService executor;
 	private PaintPanel paintPanel;
+	private JMenuBar mainMenu;
+	private JMenu file;
+	private JMenuItem saveAs;
+	private JMenuItem load;
+	private File mostRecentDirectory;
 	private java.awt.Point currentMousePosition;
 	private volatile boolean changed;
 	
@@ -51,6 +68,32 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		currentMousePosition = new java.awt.Point(0, 0);
 		changed = false;
 		setTitle("The Game of Life ❚❚ Paused");
+		mainMenu = new JMenuBar();
+		file = new JMenu("File");
+		saveAs = new JMenuItem("Save As");
+		saveAs.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				saveAsActionPerformed(e);
+			}
+		});
+		file.add(saveAs);
+		
+		load = new JMenuItem("Load");		
+		load.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				loadActionPerformed(e);
+			}
+		});
+		file.add(load);
+		mainMenu.add(file);
+		setJMenuBar(mainMenu);
+		mostRecentDirectory = null;
 		
 		addComponentListener(new ComponentAdapter()
 		{
@@ -80,7 +123,6 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 		setIconImages(icons);
 		
 		setVisible(true);
-		
 		Dimension d = paintPanel.getPreferredSize();
 		paintPanel.shiftX = (getContentPane().getWidth() - d.width) / 2;
 		paintPanel.shiftY = (getContentPane().getHeight() - d.height) / 2;
@@ -89,6 +131,40 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 //			paintPanel.shiftX = 0;
 //		if(paintPanel.shiftY < 0)
 //			paintPanel.shiftY = 0;
+	}
+	
+	private void saveAsActionPerformed(ActionEvent e)
+	{
+		JFileChooser chooser = new JFileChooser();
+		chooser.setCurrentDirectory(mostRecentDirectory);
+    	chooser.setFileFilter(new FileNameExtensionFilter("Game of Life (*.gol)", new String[] { "gol" }));        	
+		chooser.showOpenDialog(null);
+		chooser.setFileHidingEnabled(true);
+		File selected = chooser.getSelectedFile();
+		if(selected != null)
+		{
+			String dir = selected.toString();
+			int index = dir.lastIndexOf('.');
+			if(index < 0 || dir.substring(index).toLowerCase().contentEquals(".gol") == false)
+				dir += ".gol";
+			else if(dir.substring(index).contentEquals(".gol") == false)
+				dir = dir.substring(0, index) + dir.substring(index).toLowerCase();
+			save(new File(dir));
+		}
+	}
+	
+	private void loadActionPerformed(ActionEvent e)
+	{
+		JFileChooser chooser = new JFileChooser();
+		chooser.setCurrentDirectory(mostRecentDirectory);
+    	chooser.setFileFilter(new FileNameExtensionFilter("Game of Life (*.gol)", new String[] { "gol" }));        	
+		chooser.showOpenDialog(null);
+		chooser.setFileHidingEnabled(true);
+		File selected = chooser.getSelectedFile();
+		if(selected != null)
+		{
+			load(selected);
+		}
 	}
 	
 	private class RepaintRepeater extends Thread
@@ -137,6 +213,42 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 			{
 				paintPanel.tick(clockSpeed);
 				changed |= true;
+			}
+		}
+	}
+	
+	public void save(File f)
+	{
+		if(playing == false)
+		{
+			try
+			{
+				SaveableData saveableData = paintPanel.getSaveableData();
+				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
+				oos.writeObject(saveableData);
+				oos.close();
+			}
+			catch(Exception ex)
+			{
+				
+			}
+		}
+	}
+	
+	public void load(File f)
+	{
+		if(playing == false)
+		{
+			try
+			{
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
+				SaveableData saveableData = (SaveableData)ois.readObject();
+				ois.close();
+				paintPanel.load(saveableData);
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
 			}
 		}
 	}

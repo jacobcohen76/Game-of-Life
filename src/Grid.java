@@ -101,8 +101,14 @@ public class Grid implements Iterable<Grid.Cell>
 		numCols = data.numCols;
 		
 		for(int i = 0; i < data.alive.length; i++)
+		{
 			for(int j = 0; j < data.alive[i].length; j++)
+			{
 				get(i, j).status = data.alive[i][j];
+				if(data.alive[i][j])
+					aliveList.add(get(i, j));
+			}
+		}
 		for(int row = -rowPad; row < (this.numRows + rowPad); row++)
 			for(int col = -colPad; col < (this.numCols + colPad); col++)
 				get(row, col).initNeighbors();
@@ -414,7 +420,8 @@ public class Grid implements Iterable<Grid.Cell>
 	
 	public void toggle(int row, int col)
 	{
-		setStatus(row, col, !get(row, col).status);
+		if(isWithinBounds(row, col))
+			setStatus(row, col, !get(row, col).status);
 	}
 	
 	public void setStatus(Point pos, boolean status)

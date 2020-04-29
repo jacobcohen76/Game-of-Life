@@ -9,4 +9,7 @@ public class SaveableData implements Serializable
 	public int numCols;
 	public int rowPad;
 	public int colPad;
+	public int cellSize;
+	public int shiftX;
+	public int shiftY;
 }

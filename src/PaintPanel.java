@@ -254,6 +254,24 @@ public class PaintPanel extends JPanel
 		toggle(pos.y, pos.x);
 	}
 	
+	public SaveableData getSaveableData()
+	{
+		SaveableData saveableData = grid.getSaveableData();
+		saveableData.cellSize = cellSize;
+		saveableData.shiftX = shiftX;
+		saveableData.shiftY = shiftY;
+		return saveableData;
+	}
+	
+	public void load(SaveableData saveableData)
+	{
+		grid.loadSaveableData(saveableData);
+		shiftX = saveableData.shiftX;
+		shiftY = saveableData.shiftY;
+		cellSize = saveableData.cellSize;
+		repaint();
+	}
+	
 	public void set(int row, int col, boolean status)
 	{
 		grid.setStatus(row, col, status);
