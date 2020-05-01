@@ -234,6 +234,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
 				oos.writeObject(saveableData);
 				oos.close();
+				mostRecentDirectory = f.getParentFile();
 			}
 			catch(Exception ex)
 			{
@@ -252,6 +253,7 @@ public class GUI extends JFrame implements MouseListener, MouseMotionListener, K
 				SaveableData saveableData = (SaveableData)ois.readObject();
 				ois.close();
 				paintPanel.load(saveableData);
+				mostRecentDirectory = f.getParentFile();
 			}
 			catch(Exception ex)
 			{
